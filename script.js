@@ -13,6 +13,9 @@ const supabaseClient = window.supabase.createClient(
 
 const storeWhatsApp = "201003413439";
 
+const CART_STORAGE_KEY = "noire_cart";
+const MAX_ITEM_QUANTITY = 99;
+
 // ======================================
 // ELEMENTS
 // ======================================
@@ -32,10 +35,96 @@ const modalPrice = document.getElementById("modalPrice");
 const modalProductImage = document.getElementById("modalProductImage");
 const modalAddToCart = document.getElementById("modalAddToCart");
 
+const customerPhoneInput = document.getElementById("customerPhone");
+
 let currentLanguage = "ar";
-let cart = [];
+let cart = loadCart();
 let products = [];
 let selectedProductId = null;
+
+// ======================================
+// PHONE FIELD (mobile keyboard + validation)
+// ======================================
+
+if (customerPhoneInput) {
+    customerPhoneInput.setAttribute("inputmode", "tel");
+    customerPhoneInput.setAttribute("autocomplete", "tel");
+    customerPhoneInput.setAttribute("pattern", "01[0-9]{9}");
+    customerPhoneInput.setAttribute(
+        "title",
+        "رقم موبايل مصري من 11 رقم، مثال: 01012345678"
+    );
+}
+
+// ======================================
+// SMALL STYLE FOR + / - BUTTONS IN CART
+// ======================================
+
+(function addCartButtonStyles() {
+    const style = document.createElement("style");
+
+    style.textContent = `
+        .cart-qty {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            background: transparent;
+            color: inherit;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+        }
+    `;
+
+    document.head.appendChild(style);
+})();
+
+// ======================================
+// CART STORAGE (keeps the cart after refresh)
+// ======================================
+
+function loadCart() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(CART_STORAGE_KEY));
+
+        if (!Array.isArray(saved)) return [];
+
+        return saved.filter(function(item) {
+            return (
+                item &&
+                typeof item.id === "string" &&
+                Number.isFinite(Number(item.price)) &&
+                Number.isInteger(item.quantity) &&
+                item.quantity > 0
+            );
+        }).map(function(item) {
+            return {
+                id: item.id,
+                nameAr: String(item.nameAr || item.nameEn || ""),
+                nameEn: String(item.nameEn || item.nameAr || ""),
+                price: Number(item.price),
+                quantity: Math.min(item.quantity, MAX_ITEM_QUANTITY)
+            };
+        });
+    } catch (error) {
+        return [];
+    }
+}
+
+function saveCart() {
+    try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    } catch (error) {
+        // storage not available: the cart still works for this visit
+    }
+}
 
 // ======================================
 // ESCAPE HTML
@@ -117,6 +206,7 @@ function renderProducts() {
             <div class="product-image">
                 <img src="${image}"
                      alt="${nameEn}"
+                     loading="lazy"
                      onerror="this.style.display='none'">
             </div>
 
@@ -154,6 +244,28 @@ function renderProducts() {
 }
 
 // ======================================
+// PRODUCT MODAL
+// ======================================
+
+function fillModal(product) {
+    modalName.textContent =
+        currentLanguage === "ar"
+            ? product.name_ar || product.name
+            : product.name || product.name_ar;
+
+    modalDescription.textContent =
+        currentLanguage === "ar"
+            ? product.description_ar || ""
+            : product.description || "";
+
+    modalPrice.textContent =
+        Number(product.price).toLocaleString("en-US") + " EGP";
+
+    modalProductImage.src = product.image || "";
+    modalProductImage.style.display = "";
+}
+
+// ======================================
 // LANGUAGE SYSTEM
 // ======================================
 
@@ -182,6 +294,17 @@ function applyLanguage() {
     languageBtn.textContent =
         currentLanguage === "ar" ? "EN" : "AR";
 
+    // If the details window is open, switch its language too
+    if (productModal.style.display === "flex") {
+        const openProduct = products.find(function(item) {
+            return String(item.id) === String(selectedProductId);
+        });
+
+        if (openProduct) {
+            fillModal(openProduct);
+        }
+    }
+
     renderCart();
 }
 
@@ -202,7 +325,7 @@ function addToCart(product) {
     });
 
     if (existing) {
-        existing.quantity++;
+        existing.quantity = Math.min(existing.quantity + 1, MAX_ITEM_QUANTITY);
     } else {
         cart.push({
             id: id,
@@ -233,6 +356,7 @@ function renderCart() {
 
         cartItemsEl.appendChild(p);
         totalPriceEl.textContent = "0";
+        saveCart();
         return;
     }
 
@@ -247,8 +371,46 @@ function renderCart() {
         const name = document.createElement("span");
 
         name.textContent =
-            (currentLanguage === "ar" ? item.nameAr : item.nameEn)
-            + " × " + item.quantity;
+            currentLanguage === "ar" ? item.nameAr : item.nameEn;
+
+        // quantity controls: [-] 2 [+]
+        const qty = document.createElement("span");
+        qty.className = "cart-qty";
+
+        const minus = document.createElement("button");
+        minus.type = "button";
+        minus.className = "qty-btn";
+        minus.textContent = "−";
+        minus.setAttribute("aria-label", "-");
+
+        minus.addEventListener("click", function() {
+            if (item.quantity > 1) {
+                item.quantity--;
+            } else {
+                cart.splice(index, 1);
+            }
+            renderCart();
+        });
+
+        const count = document.createElement("span");
+        count.textContent = item.quantity;
+
+        const plus = document.createElement("button");
+        plus.type = "button";
+        plus.className = "qty-btn";
+        plus.textContent = "+";
+        plus.setAttribute("aria-label", "+");
+
+        plus.addEventListener("click", function() {
+            if (item.quantity < MAX_ITEM_QUANTITY) {
+                item.quantity++;
+                renderCart();
+            }
+        });
+
+        qty.appendChild(minus);
+        qty.appendChild(count);
+        qty.appendChild(plus);
 
         const price = document.createElement("span");
 
@@ -257,6 +419,7 @@ function renderCart() {
             + " EGP";
 
         const remove = document.createElement("button");
+        remove.type = "button";
         remove.className = "remove-btn";
         remove.textContent = "✕";
 
@@ -266,6 +429,7 @@ function renderCart() {
         });
 
         row.appendChild(name);
+        row.appendChild(qty);
         row.appendChild(price);
         row.appendChild(remove);
 
@@ -273,6 +437,8 @@ function renderCart() {
     });
 
     totalPriceEl.textContent = total.toLocaleString("en-US");
+
+    saveCart();
 }
 
 // ======================================
@@ -302,21 +468,7 @@ productContainer.addEventListener("click", function(event) {
 
         selectedProductId = product.id;
 
-        modalName.textContent =
-            currentLanguage === "ar"
-                ? product.name_ar || product.name
-                : product.name || product.name_ar;
-
-        modalDescription.textContent =
-            currentLanguage === "ar"
-                ? product.description_ar || ""
-                : product.description || "";
-
-        modalPrice.textContent =
-            Number(product.price).toLocaleString("en-US") + " EGP";
-
-        modalProductImage.src = product.image || "";
-        modalProductImage.style.display = "";
+        fillModal(product);
 
         productModal.style.display = "flex";
     }
@@ -342,6 +494,12 @@ closeModal.addEventListener("click", function() {
 
 productModal.addEventListener("click", function(event) {
     if (event.target === productModal) {
+        productModal.style.display = "none";
+    }
+});
+
+document.addEventListener("keydown", function(event) {
+    if (event.key === "Escape") {
         productModal.style.display = "none";
     }
 });
@@ -391,7 +549,11 @@ checkoutForm.addEventListener("submit", function(event) {
     event.preventDefault();
 
     if (cart.length === 0) {
-        alert("السلة فارغة!");
+        alert(
+            currentLanguage === "ar"
+                ? "السلة فارغة!"
+                : "Your cart is empty!"
+        );
         return;
     }
 
@@ -407,15 +569,13 @@ checkoutForm.addEventListener("submit", function(event) {
     let total = 0;
     let productsMessage = "";
 
+    // The order message is always in Arabic, the store owner's language
     cart.forEach(function(item) {
-        const productName =
-            currentLanguage === "ar" ? item.nameAr : item.nameEn;
-
         const itemTotal = item.price * item.quantity;
         total += itemTotal;
 
         productsMessage +=
-            `\n- ${productName} × ${item.quantity} = ${itemTotal} EGP`;
+            `\n- ${item.nameAr} × ${item.quantity} = ${itemTotal.toLocaleString("en-US")} EGP`;
     });
 
     const message = `
@@ -430,7 +590,7 @@ checkoutForm.addEventListener("submit", function(event) {
 المنتجات:
 ${productsMessage}
 
-الإجمالي: ${total} EGP
+الإجمالي: ${total.toLocaleString("en-US")} EGP
 
 شكراً لاختيارك NOIRÉ
 `;
@@ -438,7 +598,18 @@ ${productsMessage}
     const whatsappLink =
         `https://wa.me/${storeWhatsApp}?text=${encodeURIComponent(message)}`;
 
-    window.open(whatsappLink, "_blank");
+    // Some phones (iPhone) block window.open: fall back to opening in the same tab
+    const opened = window.open(whatsappLink, "_blank");
+
+    if (!opened) {
+        window.location.href = whatsappLink;
+    }
+
+    // Order sent: reset the cart and the form
+    cart = [];
+    renderCart();
+    checkoutForm.reset();
+    checkoutForm.style.display = "none";
 });
 
 // ======================================

@@ -1,0 +1,280 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #111;
+    color: #F5F0E6;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    background: #1b1b1b;
+    padding: 20px 8%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #D4AF75;
+}
+
+.header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+header h1 {
+    color: #D4AF75;
+    letter-spacing: 4px;
+}
+
+header span {
+    font-size: 14px;
+}
+
+main {
+    width: 90%;
+    max-width: 1100px;
+    margin: 35px auto;
+}
+
+.dashboard-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card,
+.product-form,
+.products-management {
+    background: #1b1b1b;
+    padding: 25px;
+    border: 1px solid #444;
+    border-radius: 10px;
+}
+
+.stat-card {
+    flex: 1;
+}
+
+.stat-card h3 {
+    color: #D4AF75;
+}
+
+.stat-card p {
+    font-size: 25px;
+    margin-top: 10px;
+}
+
+.product-form {
+    margin-bottom: 30px;
+}
+
+h2 {
+    color: #D4AF75;
+    margin-bottom: 20px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+label {
+    font-size: 15px;
+}
+
+input,
+textarea {
+    width: 100%;
+    padding: 12px;
+    background: #111;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 5px;
+    font-size: 16px;
+    font-family: inherit;
+}
+
+textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: #D4AF75;
+}
+
+button {
+    background: #D4AF75;
+    color: #111;
+    padding: 12px;
+    min-height: 44px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    font-family: inherit;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.secondary-btn {
+    background: transparent;
+    color: #D4AF75;
+    border: 1px solid #D4AF75;
+}
+
+.delete-btn {
+    background: transparent;
+    color: #e5a0a0;
+    border: 1px solid #e5a0a0;
+}
+
+#loginMessage {
+    color: #e5a0a0;
+    min-height: 20px;
+}
+
+#imagePreview,
+#editImagePreview {
+    display: none;
+    width: 100%;
+    max-width: 220px;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-top: 6px;
+}
+
+/* PRODUCTS LIST */
+
+.admin-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.admin-heading h2 {
+    margin-bottom: 0;
+}
+
+.admin-product {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid #444;
+}
+
+.admin-product img {
+    width: 65px;
+    height: 65px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+.admin-product-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-product-info h3 {
+    font-size: 16px;
+    overflow-wrap: anywhere;
+}
+
+.admin-product-info p {
+    color: #D4AF75;
+    margin-top: 4px;
+}
+
+.admin-product-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-product-actions button {
+    padding: 10px 16px;
+}
+
+/* EDIT MODAL */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px 12px;
+    overflow-y: auto;
+    z-index: 100;
+}
+
+.modal-box {
+    background: #1b1b1b;
+    border: 1px solid #444;
+    border-radius: 10px;
+    padding: 22px;
+    width: 100%;
+    max-width: 520px;
+    margin: auto;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.modal-actions button {
+    flex: 1;
+}
+
+@media (max-width: 600px) {
+    header {
+        padding: 16px 5%;
+    }
+
+    main {
+        width: 94%;
+        margin: 20px auto;
+    }
+
+    .dashboard-stats {
+        flex-direction: column;
+    }
+
+    .stat-card,
+    .product-form,
+    .products-management {
+        padding: 18px;
+    }
+
+    .admin-product {
+        flex-wrap: wrap;
+    }
+
+    .admin-product-actions {
+        width: 100%;
+    }
+
+    .admin-product-actions button {
+        flex: 1;
+    }
+}
